@@ -1,6 +1,7 @@
 interface Post {
 	id: number;
 	message: string;
-	created_by: string;
+	username: string;
 	created_at: string;
+	updated_at: string;
 }
