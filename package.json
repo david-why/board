@@ -20,5 +20,6 @@
 	"dependencies": {
 		"hono": "^4.7.10",
 		"jose": "^6.0.11"
-	}
+	},
+	"packageManager": "yarn@4.9.1"
 }
