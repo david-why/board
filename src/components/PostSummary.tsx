@@ -1,10 +1,13 @@
 import type { FC } from 'hono/jsx';
 
-const PostSummary: FC<{ post: Post }> = ({ post }) => {
+const PostSummary: FC<{ post: Post; utcOffset: number }> = ({ post, utcOffset }) => {
+	const date = new Date(post.created_at);
+	date.setHours(date.getHours() - date.getTimezoneOffset() / 60);
+	date.setTime(date.getTime() + utcOffset * 3600000);
 	return (
 		<div>
 			<p>
-				<b>{post.username}</b> @ <span>{new Date(post.created_at).toLocaleString()}</span>
+				<b>{post.username}</b> @ <span>{date.toLocaleString(undefined, { timeZone: 'UTC' })}</span>
 			</p>
 			<blockquote>{post.message}</blockquote>
 			<p>
