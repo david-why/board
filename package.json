@@ -15,9 +15,10 @@
 		"prettier": "^3.5.3",
 		"typescript": "^5.5.2",
 		"vitest": "~3.0.7",
-		"wrangler": "^4.16.1"
+		"wrangler": "4.17.0"
 	},
 	"dependencies": {
+		"@elithrar/workers-hono-rate-limit": "^0.4.3",
 		"hono": "^4.7.10",
 		"jose": "^6.0.11"
 	},

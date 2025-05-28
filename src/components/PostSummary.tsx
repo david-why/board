@@ -1,4 +1,5 @@
 import type { FC } from 'hono/jsx';
+import DateText from './DateText';
 
 const PostSummary: FC<{ post: Post; utcOffset: number }> = ({ post, utcOffset }) => {
 	const date = new Date(post.created_at);
@@ -7,7 +8,7 @@ const PostSummary: FC<{ post: Post; utcOffset: number }> = ({ post, utcOffset })
 	return (
 		<div>
 			<p>
-				<b>{post.username}</b> @ <span>{date.toLocaleString(undefined, { timeZone: 'UTC' })}</span>
+				<b>{post.username}</b> @ <DateText date={date} />
 			</p>
 			<blockquote>{post.message}</blockquote>
 			<p>
