@@ -1,7 +1,7 @@
 import type { FC } from 'hono/jsx';
 import DateText from './DateText';
 
-const PostSummary: FC<{ post: Post; utcOffset: number }> = ({ post, utcOffset }) => {
+const PostSummary: FC<{ post: PostWithUsername; utcOffset: number }> = ({ post, utcOffset }) => {
 	const date = new Date(post.created_at);
 	date.setHours(date.getHours() - date.getTimezoneOffset() / 60);
 	date.setTime(date.getTime() + utcOffset * 3600000);

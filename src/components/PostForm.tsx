@@ -2,11 +2,12 @@ import { getCookie } from 'hono/cookie';
 import { css } from 'hono/css';
 import { FC } from 'hono/jsx';
 import { useRequestContext } from 'hono/jsx-renderer';
+import UsernameForm from './UsernameForm';
 
 const PostForm: FC = () => {
 	const c = useRequestContext<HonoEnv>();
-	const email = c.get('email');
-	const loggedIn = !!email;
+	const user = c.get('user');
+	const loggedIn = !!user;
 
 	const username = getCookie(c, 'username') || '';
 
@@ -28,20 +29,20 @@ const PostForm: FC = () => {
 	}
 
 	return (
-		<form action="/api/post" method="post">
+		<>
 			<p>
-				You are logged in as <strong>{email}</strong>. Your email will not be displayed anywhere.
+				You are logged in as <b>{user.email}</b>. Your email will not be displayed anywhere.
 			</p>
-			<p>
-				<textarea name="message" placeholder="Write something..." required class={textarea}></textarea>
-			</p>
-			<p>
-				<input name="username" placeholder="Username" required value={username} class={input} />
-			</p>
-			<p>
-				<button type="submit">Post</button>
-			</p>
-		</form>
+			<UsernameForm />
+			<form action="/api/post" method="post">
+				<p>
+					<textarea name="message" placeholder="Write something..." required class={textarea}></textarea>
+				</p>
+				<p>
+					<button type="submit">Post</button>
+				</p>
+			</form>
+		</>
 	);
 };
 

@@ -9,6 +9,9 @@ import PostForm from './components/PostForm';
 import PostSummary from './components/PostSummary';
 import TimeZoneForm from './components/TimeZoneForm';
 import { ErrorLayout } from './layout';
+import { addPost, getRecentPosts } from './repositories/post';
+import { getOrCreateUser, getUserByEmail, updateUsername } from './repositories/user';
+import { addCode, checkCode } from './repositories/code';
 
 declare global {
 	interface HonoEnv {
@@ -20,7 +23,7 @@ declare global {
 
 declare module 'hono' {
 	interface ContextVariableMap {
-		email?: string;
+		user?: User;
 	}
 }
 
@@ -76,15 +79,15 @@ app.notFound((c) => {
 });
 
 app.get('/', async (c) => {
-	const posts = await c.env.DB.prepare('SELECT * FROM posts ORDER BY created_at DESC LIMIT 10').all<Post>();
+	const posts = await getRecentPosts(c, 10);
 	const utcOffset = parseFloat(getCookie(c, 'utcOffset') || '0');
 	return c.render(
 		<>
 			<h1>Welcome to The Board</h1>
 			<PostForm />
 			<h2>Recent Posts</h2>
-			{!!posts.results.length && posts.results.map((post) => <PostSummary post={post} utcOffset={utcOffset}></PostSummary>)}
-			{!posts.results.length && (
+			{!!posts.length && posts.map((post) => <PostSummary post={post} utcOffset={utcOffset}></PostSummary>)}
+			{!posts.length && (
 				<>
 					<p>No posts yet.</p>
 					<hr />
@@ -96,7 +99,7 @@ app.get('/', async (c) => {
 });
 
 app.get('/login', (c) => {
-	const email = c.get('email');
+	const email = c.get('user')?.email;
 	if (email) {
 		return c.redirect('/');
 	}
@@ -147,22 +150,18 @@ app.get('/verify', async (c) => {
 app.use('/api/post', requireAuth);
 
 app.post('/api/post', async (c) => {
-	const body = await c.req.formData();
-	const message = body.get('message');
-	const username = body.get('username');
-	if (!message || typeof message !== 'string' || !username || typeof username !== 'string') {
-		c.status(400);
-		throw new Error('Message and username cannot be empty.');
-	}
-	const email = c.get('email');
-	if (!email) {
+	const user = c.get('user');
+	if (!user) {
 		c.status(401);
 		throw new Error('You must be signed in to post messages.');
 	}
-	await c.env.DB.prepare('INSERT INTO posts (message, username, email) VALUES (?, ?, ?)').bind(message, username, email).run();
-	setCookie(c, 'username', username, {
-		maxAge: 60 * 60 * 24 * 365, // 1 year
-	});
+	const body = await c.req.formData();
+	const message = body.get('message');
+	if (!message || typeof message !== 'string') {
+		c.status(400);
+		throw new Error('Message cannot be empty.');
+	}
+	await addPost(c, message, user.id);
 	return c.redirect('/');
 });
 
@@ -178,6 +177,26 @@ app.post('/api/set-timezone', async (c) => {
 	setCookie(c, 'utcOffset', utcOffset.toString(), {
 		maxAge: 60 * 60 * 24 * 365, // 1 year
 	});
+	return c.redirect('/');
+});
+
+app.post('/api/set-username', async (c) => {
+	const user = c.get('user');
+	if (!user) {
+		c.status(401);
+		throw new Error('You must be signed in to set your username.');
+	}
+	const body = await c.req.formData();
+	const username = body.get('username');
+	if (!username || typeof username !== 'string' || username.length < 3 || username.length > 20) {
+		c.status(400);
+		throw new Error('Username must be between 3 and 20 characters long.');
+	}
+	if (!/^[a-zA-Z0-9_\-]+$/.test(username)) {
+		c.status(400);
+		throw new Error('Username can only contain letters, numbers, underscores, and dashes.');
+	}
+	await updateUsername(c, user.id, username);
 	return c.redirect('/');
 });
 
@@ -197,35 +216,36 @@ app.post('/api/login', async (c) => {
 	} catch (error: any) {
 		throw new Error(error.message || 'Failed to send verification code.');
 	}
-	await c.env.DB.prepare('DELETE FROM codes WHERE email = ?').bind(email).run();
-	await c.env.DB.prepare('INSERT INTO codes (email, code) VALUES (?, ?)').bind(email, code.toString()).run();
+	const user = await getOrCreateUser(c, email);
+	await addCode(c, user.id, code.toString());
 	const params = new URLSearchParams();
-	params.set('email', email);
+	params.set('id', user.id.toString());
 	return c.redirect(`/verify?${params.toString()}`);
 });
 
 app.post('/api/verify', async (c) => {
 	const body = await c.req.formData();
-	const email = body.get('email');
+	const userIdString = body.get('id');
 	const code = body.get('code');
-	if (!email || typeof email !== 'string' || !code || typeof code !== 'string') {
-		// return c.render(<Error>Invalid verification code.</Error>);
+	if (!userIdString || typeof userIdString !== 'string' || !code || typeof code !== 'string') {
 		throw new Error('Invalid verification code.');
 	}
-	const result = await c.env.DB.prepare('SELECT * FROM codes WHERE email = ? AND code = ?').bind(email, code).first();
-	if (!result) {
-		// return c.render(<Error>Invalid verification code.</Error>);
+	const userId = parseInt(userIdString);
+	if (isNaN(userId)) {
+		throw new Error('Invalid user ID.');
+	}
+	const isCorrect = await checkCode(c, userId, code);
+	if (!isCorrect) {
 		throw new Error('Invalid verification code.');
 	}
-	await c.env.DB.prepare('DELETE FROM codes WHERE email = ?').bind(email).run();
-	await signIn(c, email);
+	await signIn(c, userId);
 	return c.redirect('/');
 });
 
 export default {
 	fetch: app.fetch,
 	async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
-		await env.DB.prepare('DELETE FROM codes WHERE created_at < datetime("now", "-10 minutes")').run();
+		await env.DB.prepare('DELETE FROM codes WHERE expires_at < unixepoch()').run();
 		console.log('Cleaned up expired verification codes.');
 	},
 };
