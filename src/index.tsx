@@ -10,7 +10,7 @@ import PostSummary from './components/PostSummary';
 import TimeZoneForm from './components/TimeZoneForm';
 import { ErrorLayout } from './layout';
 import { addPost, getRecentPosts } from './repositories/post';
-import { getOrCreateUser, getUserByEmail, updateUsername } from './repositories/user';
+import { getOrCreateUser, updateUsername } from './repositories/user';
 import { addCode, checkCode } from './repositories/code';
 
 declare global {
@@ -23,6 +23,7 @@ declare global {
 
 declare module 'hono' {
 	interface ContextVariableMap {
+		utcOffset: number;
 		user?: User;
 	}
 }
@@ -32,11 +33,14 @@ const app = new Hono<HonoEnv>();
 app.use(auth);
 
 app.use(async (c, next) => {
-	if (getCookie(c, 'utcOffset') === undefined) {
+	let utcOffset = parseFloat(getCookie(c, 'utcOffset') || '');
+	if (isNaN(utcOffset)) {
 		setCookie(c, 'utcOffset', '8', {
 			maxAge: 60 * 60 * 24 * 365, // 1 year
 		});
+		utcOffset = 8;
 	}
+	c.set('utcOffset', utcOffset);
 	return next();
 });
 
@@ -99,8 +103,8 @@ app.get('/', async (c) => {
 });
 
 app.get('/login', (c) => {
-	const email = c.get('user')?.email;
-	if (email) {
+	const user = c.get('user');
+	if (user) {
 		return c.redirect('/');
 	}
 	return c.render(
@@ -125,8 +129,8 @@ app.get('/logout', async (c) => {
 });
 
 app.get('/verify', async (c) => {
-	const email = c.req.query('email');
-	if (!email) {
+	const userId = c.req.query('id');
+	if (!userId) {
 		c.status(400);
 		throw new Error('Invalid verification link.');
 	}
@@ -136,7 +140,7 @@ app.get('/verify', async (c) => {
 			<p>A verification code has been sent to your Teams account. Please enter it below.</p>
 			<form action="/api/verify" method="post">
 				<p>
-					<input name="email" type="hidden" value={email} />
+					<input name="id" type="hidden" value={userId} />
 					<input name="code" placeholder="Verification code" required />
 				</p>
 				<p>
@@ -196,7 +200,12 @@ app.post('/api/set-username', async (c) => {
 		c.status(400);
 		throw new Error('Username can only contain letters, numbers, underscores, and dashes.');
 	}
-	await updateUsername(c, user.id, username);
+	try {
+		await updateUsername(c, user.id, username);
+	} catch (error: any) {
+		c.status(500);
+		throw new Error('Failed to update username. Possibly already taken.');
+	}
 	return c.redirect('/');
 });
 

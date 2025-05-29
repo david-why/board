@@ -1,3 +1,14 @@
+DROP TABLE IF EXISTS users;
+CREATE TABLE users (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	email TEXT NOT NULL,
+	username TEXT NOT NULL,
+	created_at REAL DEFAULT (unixepoch('subsec'))
+);
+
+CREATE INDEX idx_users_email ON users (email);
+CREATE UNIQUE INDEX idx_users_username ON users (username);
+
 DROP TABLE IF EXISTS posts;
 CREATE TABLE posts (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -22,15 +33,4 @@ CREATE TABLE codes (
 );
 
 CREATE INDEX idx_codes_created_at ON codes (created_at);
-CREATE INDEX idx_codes_email ON codes (email);
-
-DROP TABLE IF EXISTS users;
-CREATE TABLE users (
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	email TEXT NOT NULL,
-	username TEXT NOT NULL,
-	created_at REAL DEFAULT (unixepoch('subsec'))
-);
-
-CREATE INDEX idx_users_email ON users (email);
-CREATE INDEX idx_users_username ON users (username);
+CREATE INDEX idx_codes_user_id ON codes (user_id);

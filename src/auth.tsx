@@ -13,9 +13,9 @@ export const auth: H = async (c, next) => {
 			const user = await getUser(c, payload.id);
 			if (!user) {
 				deleteCookie(c, 'token');
-				throw new Error('User not found');
+			} else {
+				c.set('user', user);
 			}
-			c.set('user', user);
 		}
 	}
 	return next();
