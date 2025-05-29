@@ -1,14 +1,14 @@
 import { Hono, type Context } from 'hono';
 import { getCookie, setCookie } from 'hono/cookie';
 import { Style } from 'hono/css';
+import { ErrorBoundary } from 'hono/jsx';
 import { jsxRenderer } from 'hono/jsx-renderer';
 import type { H as HonoH } from 'hono/types';
+import { auth, requireAuth, sendCode, signIn, signOut } from './auth';
 import PostForm from './components/PostForm';
 import PostSummary from './components/PostSummary';
 import TimeZoneForm from './components/TimeZoneForm';
 import { ErrorLayout } from './layout';
-import { auth, requireAuth, sendCode, signIn, signOut } from './auth';
-import { ErrorBoundary } from 'hono/jsx';
 
 declare global {
 	interface HonoEnv {
@@ -29,31 +29,51 @@ const app = new Hono<HonoEnv>();
 app.use(auth);
 
 app.use(async (c, next) => {
+	if (getCookie(c, 'utcOffset') === undefined) {
+		setCookie(c, 'utcOffset', '8', {
+			maxAge: 60 * 60 * 24 * 365, // 1 year
+		});
+	}
+	return next();
+});
+
+app.use(async (c, next) => {
 	await next();
 	if (c.error) {
+		console.error('Error occurred:', c.error);
+		c.status(500);
 		c.res = await c.render(<ErrorLayout>{c.error.message || 'An unexpected error occurred.'}</ErrorLayout>);
-		c.res.status = 500;
 	}
 });
 
 app.use(
-	jsxRenderer(({ children }) => {
-		return (
-			<html>
-				<head>
-					<meta charset="UTF-8" />
-					<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-					<meta name="robots" content="noindex" />
-					<link rel="stylesheet" href="/styles.css" />
-					<Style />
-				</head>
-				<body>
-					<ErrorBoundary fallbackRender={(error) => <ErrorLayout>{error.message}</ErrorLayout>}>{children}</ErrorBoundary>
-				</body>
-			</html>
-		);
-	}),
+	jsxRenderer(({ children }) => (
+		<html>
+			<head>
+				<meta charset="UTF-8" />
+				<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+				<meta name="robots" content="noindex" />
+				<link rel="stylesheet" href="/styles.css" />
+				<Style />
+			</head>
+			<body>
+				<ErrorBoundary fallbackRender={(error) => <ErrorLayout>{error.message}</ErrorLayout>}>{children}</ErrorBoundary>
+			</body>
+		</html>
+	)),
 );
+
+app.notFound((c) => {
+	return c.render(
+		<>
+			<h1>404 Not Found</h1>
+			<p>The page you are looking for does not exist.</p>
+			<p>
+				<a href="/">Go back to the homepage</a>
+			</p>
+		</>,
+	);
+});
 
 app.get('/', async (c) => {
 	const posts = await c.env.DB.prepare('SELECT * FROM posts ORDER BY created_at DESC LIMIT 10').all<Post>();
