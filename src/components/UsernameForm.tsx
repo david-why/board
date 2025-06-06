@@ -21,8 +21,7 @@ const UsernameForm: FC = () => {
 				) : (
 					'You do not have a username yet'
 				)}
-				. Change your username: <input name="username" autocomplete="off" placeholder="New username" value={username} required />{' '}
-				<button type="submit">Update</button>
+				. Change your username: <input name="username" tabindex={0} autocomplete="new-password" value={username} required /> <button type="submit">Update</button>
 			</p>
 		</form>
 	);

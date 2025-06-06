@@ -1,7 +1,7 @@
 interface Post {
 	id: number;
 	message: string;
-	email: string;
+	user_id: number;
 	created_at: Date;
 	// updated_at: string; // unused
 }

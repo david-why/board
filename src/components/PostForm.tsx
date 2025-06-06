@@ -36,7 +36,7 @@ const PostForm: FC = () => {
 			<UsernameForm />
 			<form action="/api/post" method="post">
 				<p>
-					<textarea name="message" placeholder="Write something..." required class={textarea}></textarea>
+					<textarea name="message" placeholder="Write something..." required autofocus class={textarea}></textarea>
 				</p>
 				<p>
 					<button type="submit">Post</button>
