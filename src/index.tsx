@@ -186,6 +186,37 @@ app.get('/post/:id/delete', async (c) => {
 	);
 });
 
+app.get('/post/:id/edit', async (c) => {
+	const user = c.get('user');
+	if (!user) {
+		c.status(401);
+		throw new Error('You must be signed in to edit posts.');
+	}
+	const postId = parseInt(c.req.param('id'));
+	if (isNaN(postId)) {
+		c.status(400);
+		throw new Error('Invalid post ID.');
+	}
+	const post = await getPost(c, postId);
+	if (!post) {
+		c.status(404);
+		throw new Error('Post not found.');
+	}
+	if (post.username !== user.username) {
+		c.status(403);
+		throw new Error('You can only edit your own posts.');
+	}
+	return c.render(
+		<>
+			<h1>Edit Post</h1>
+			<PostForm post={post} callback={'/api/post/edit?id=' + post.id} />
+			<p>
+				<a href="javascript:history.back()">Cancel</a>
+			</p>
+		</>,
+	);
+});
+
 app.route('/api', api);
 
 export default {

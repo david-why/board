@@ -4,7 +4,7 @@ import { FC } from 'hono/jsx';
 import { useRequestContext } from 'hono/jsx-renderer';
 import UsernameForm from './UsernameForm';
 
-const PostForm: FC = () => {
+const PostForm: FC<{ post?: Post; callback?: string }> = ({ post, callback }) => {
 	const c = useRequestContext<HonoEnv>();
 	const user = c.get('user');
 	const loggedIn = !!user;
@@ -34,9 +34,9 @@ const PostForm: FC = () => {
 				You are logged in as <b>{user.email}</b>. Your email will not be displayed anywhere.
 			</p>
 			<UsernameForm />
-			<form action="/api/post" method="post">
+			<form action={callback || '/api/post'} method="post">
 				<p>
-					<textarea name="message" placeholder="Write something..." required autofocus class={textarea}></textarea>
+					<textarea name="message" placeholder="Write something..." required autofocus class={textarea}>{post?.message}</textarea>
 				</p>
 				<p>
 					<button type="submit">Post</button>

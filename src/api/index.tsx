@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { requireAuth, sendCode, signIn } from '../auth';
-import { addPost, deletePost } from '../repositories/post';
+import { addPost, deletePost, editPost } from '../repositories/post';
 import { setCookie } from 'hono/cookie';
 import { getOrCreateUser, updateUsername } from '../repositories/user';
 import { addCode, checkCode } from '../repositories/code';
@@ -133,6 +133,28 @@ app.post('/post/delete', async (c) => {
 		throw new Error('Invalid post ID.');
 	}
 	await deletePost(c, postId, user.id);
+	return c.redirect('/');
+});
+
+app.post('/post/edit', async (c) => {
+	const postIdString = c.req.query('id');
+	const user = c.get('user');
+	if (!user) {
+		c.status(401);
+		throw new Error('You must be signed in to edit posts.');
+	}
+	const body = await c.req.formData();
+	const message = body.get('message');
+	if (!postIdString || !message || typeof message !== 'string') {
+		c.status(400);
+		throw new Error('Invalid post ID or message.');
+	}
+	const postId = parseInt(postIdString);
+	if (isNaN(postId)) {
+		c.status(400);
+		throw new Error('Invalid post ID.');
+	}
+	await editPost(c, postId, message, user.id);
 	return c.redirect('/');
 });
 

@@ -72,3 +72,14 @@ export const deletePost = async (c: C, postId: number, userId: number): Promise<
 		throw new Error('Post not found or you do not have permission to delete it.');
 	}
 };
+
+const EDIT_POST_SQL = `
+UPDATE posts SET message = ? WHERE id = ? AND user_id = ?;
+`;
+
+export const editPost = async (c: C, postId: number, message: string, userId: number): Promise<void> => {
+	const result = await c.env.DB.prepare(EDIT_POST_SQL).bind(message, postId, userId).run();
+	if (result.meta.changes === 0) {
+		throw new Error('Post not found or you do not have permission to edit it.');
+	}
+};
