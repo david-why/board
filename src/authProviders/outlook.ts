@@ -32,9 +32,11 @@ async function getToken(c: C) {
 		if (!tokenData.access_token) {
 			throw new Error('No token received during refresh');
 		}
-		await c.env.KV.put('board-outlook-access-token', tokenData.access_token);
-		await c.env.KV.put('board-outlook-refresh-token', tokenData.refresh_token || '');
-		await c.env.KV.put('board-outlook-token-expiry', (Date.now() + tokenData.expires_in * 1000).toString());
+		await Promise.all([
+			c.env.KV.put('board-outlook-access-token', tokenData.access_token),
+			c.env.KV.put('board-outlook-refresh-token', tokenData.refresh_token || ''),
+			c.env.KV.put('board-outlook-token-expiry', (Date.now() + tokenData.expires_in * 1000).toString()),
+		]);
 		return tokenData.access_token;
 	}
 	return token;
@@ -98,9 +100,11 @@ export default {
 				throw new Error('No access token received from Outlook.');
 			}
 
-			c.env.KV.put('board-outlook-access-token', tokenData.access_token);
-			c.env.KV.put('board-outlook-refresh-token', tokenData.refresh_token || '');
-			c.env.KV.put('board-outlook-token-expiry', (Date.now() + tokenData.expires_in * 1000).toString());
+			await Promise.all([
+				c.env.KV.put('board-outlook-access-token', tokenData.access_token),
+				c.env.KV.put('board-outlook-refresh-token', tokenData.refresh_token || ''),
+				c.env.KV.put('board-outlook-token-expiry', (Date.now() + tokenData.expires_in * 1000).toString()),
+			]);
 
 			return c.json({ success: true, message: 'Outlook authentication successful.' });
 		});
