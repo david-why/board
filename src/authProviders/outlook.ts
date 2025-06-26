@@ -56,7 +56,7 @@ export default {
 			}
 
 			return c.redirect(
-				`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(c.req.url + '-callback')}&response_mode=query&scope=openid%20email%20offline_access%20Mail.Send`,
+				`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(c.req.url.split('?')[0] + '-callback')}&response_mode=query&scope=openid%20email%20offline_access%20Mail.Send`,
 			);
 		});
 		app.get('/api/admin/outlook-auth-callback', async (c) => {
