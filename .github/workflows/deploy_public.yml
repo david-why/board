@@ -1,0 +1,25 @@
+name: Deploy Public Cloudflare Worker
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Enable corepack
+        run: corepack enable
+      - name: Install dependencies
+        run: yarn install --immutable
+      - name: Deploy project
+        run: |
+          cp wrangler-public.jsonc wrangler.jsonc
+          yarn wrangler deploy
