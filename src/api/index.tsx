@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { requireAuth, sendCode, signIn } from '../auth';
+import { getAuthProvider, requireAuth, signIn } from '../auth';
 import { addPost, deletePost, editPost } from '../repositories/post';
 import { setCookie } from 'hono/cookie';
 import { getOrCreateUser, updateUsername } from '../repositories/user';
@@ -80,9 +80,10 @@ app.post('/login', async (c) => {
 		throw new Error('Email cannot be empty.');
 	}
 
-	let code: number;
+	const code = Math.floor(Math.random() * 900000) + 100000;
 	try {
-		code = await sendCode(c, email);
+		const authProvider = getAuthProvider(c);
+		await authProvider.sendCode(c, email, code);
 	} catch (error: any) {
 		throw new Error(error.message || 'Failed to send verification code.');
 	}

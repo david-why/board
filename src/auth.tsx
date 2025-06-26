@@ -1,5 +1,6 @@
-import { getCookie, getSignedCookie, setCookie, setSignedCookie, deleteCookie } from 'hono/cookie';
+import { getSignedCookie, setSignedCookie, deleteCookie } from 'hono/cookie';
 import { getUser } from './repositories/user';
+import authProviders from './authProviders';
 
 const AUTH_VERSION = 2;
 
@@ -29,28 +30,6 @@ export const requireAuth: H = async (c, next) => {
 	return next();
 };
 
-export const sendCode = async (c: C, email: string) => {
-	const code = Math.floor(Math.random() * 900000) + 100000;
-	const result = await fetch(c.env.VERIFY_CODE_URL, {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-		},
-		body: JSON.stringify({
-			email,
-			code: code.toString(),
-		}),
-	});
-	if (!result.ok) {
-		throw new Error(`Failed to create verification code`);
-	}
-	const data = await result.json<{ success: false } | { success: true; name: string }>();
-	if (!data.success) {
-		throw new Error(`Failed to send verification code`);
-	}
-	return code;
-};
-
 export const signIn = async (c: C, id: number) => {
 	const user = await getUser(c, id);
 	if (!user) {
@@ -69,3 +48,19 @@ export const signOut = async (c: C) => {
 	deleteCookie(c, 'token');
 	c.set('user', undefined);
 };
+
+export const getAuthProvider = (c: C) => {
+	for (const provider of authProviders) {
+		if (provider.isActive(c)) {
+			console.log(`Using active authentication provider: ${provider.name}`);
+			return provider;
+		}
+	}
+	throw new Error('No active authentication provider found.');
+}
+
+export const setupAuthProviders = async (app: App) => {
+	for (const provider of authProviders) {
+		await provider.setup(app);
+	}
+}

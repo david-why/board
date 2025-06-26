@@ -25,6 +25,12 @@
 			"database_id": "8651f5fc-0e48-4031-b0a5-c7aab78c9b5f"
 		}
 	],
+	"kv_namespaces": [
+		{
+			"binding": "KV",
+			"id": "fdf058b78e6244d59078b8932b21fd47"
+		}
+	],
 	"triggers": {
 		"crons": [
 			"*/10 * * * *"

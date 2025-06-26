@@ -16,9 +16,6 @@ const PostForm: FC<{ post?: Post; callback?: string }> = ({ post, callback }) =>
 		height: 200px;
 		resize: vertical;
 	`;
-	const input = css`
-		width: 100%;
-	`;
 
 	if (!loggedIn) {
 		return (

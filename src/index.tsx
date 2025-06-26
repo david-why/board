@@ -5,7 +5,7 @@ import { ErrorBoundary } from 'hono/jsx';
 import { jsxRenderer } from 'hono/jsx-renderer';
 import type { H as HonoH } from 'hono/types';
 import api from './api';
-import { auth, signOut } from './auth';
+import { auth, setupAuthProviders, signOut } from './auth';
 import PostForm from './components/PostForm';
 import PostSummary from './components/PostSummary';
 import TimeZoneForm from './components/TimeZoneForm';
@@ -13,11 +13,22 @@ import { ErrorLayout } from './layout';
 import { getPost, getRecentPosts } from './repositories/post';
 
 declare global {
+	interface Env {
+		VERIFY_CODE_URL?: string;
+
+		VERIFY_OUTLOOK_CLIENT_ID?: string;
+		VERIFY_OUTLOOK_CLIENT_SECRET?: string;
+		VERIFY_OUTLOOK_TENANT?: string;
+	}
+}
+
+declare global {
 	interface HonoEnv {
 		Bindings: Env;
 	}
 	type H = HonoH<HonoEnv>;
 	type C = Context<HonoEnv>;
+	type App = Hono<HonoEnv>;
 }
 
 declare module 'hono' {
@@ -28,6 +39,8 @@ declare module 'hono' {
 }
 
 const app = new Hono<HonoEnv>();
+
+await setupAuthProviders(app);
 
 app.use(auth);
 
