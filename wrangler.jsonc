@@ -4,7 +4,7 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "board",
+	"name": "theboard",
 	"main": "src/index.tsx",
 	"compatibility_date": "2025-05-25",
 	"compatibility_flags": [
