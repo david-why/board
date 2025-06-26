@@ -3,7 +3,7 @@ export default {
 	isActive(c: C) {
 		return !!c.env.VERIFY_CODE_URL;
 	},
-	async setup(app: App) {},
+	async setup() {},
 	async sendCode(c: C, email: string, code: number) {
 		const result = await fetch(c.env.VERIFY_CODE_URL!, {
 			method: 'POST',
@@ -18,7 +18,7 @@ export default {
 		if (!result.ok) {
 			throw new Error(`Failed to create verification code`);
 		}
-		const data = await result.json<{ success: false } | { success: true; name: string }>();
+		const data = await result.json<{ success: boolean }>();
 		if (!data.success) {
 			throw new Error(`Failed to send verification code`);
 		}

@@ -33,8 +33,9 @@ If you'd like to deploy your own copy of The Board, it's super easy! Everything 
    3. Choose a project name.
    4. Under "Advanced settings", open the "Build variables" menu.
    5. Don't click "Create and deploy" until I tell you to!
-7. Now, you need to set environment variables for your website. The following variable is mandatory:
-   - `AUTH_SECRET`: Set this to some random bytes (such as the output of `openssl rand -hex 16`). Save this value locally!
+7. Now, you need to set environment variables for your website. The following variables exist:
+   - `AUTH_SECRET`: Required. Set this to some random bytes (such as the output of `openssl rand -hex 16`). Save this value locally!
+   - `VERIFY_SENT_MESSAGE`: Optional. Set this if you want something other than "A verification code has been sent to your email address." to show up on the verification code sent page.
 8. Now, you need to choose a method of sending verification codes. You can choose from the following:
    - Outlook: Verification codes are sent from an Outlook account (this is the one used on the public instance). To set up:
      1. Create an application registration on [Microsoft Entra ID in the Azure portal](https://portal.azure.com/#view/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/~/RegisteredApps).
@@ -43,7 +44,7 @@ If you'd like to deploy your own copy of The Board, it's super easy! Everything 
      4. Set the following environment variables on Cloudflare:
         - `VERIFY_OUTLOOK_CLIENT_ID`: Your Application ID.
         - `VERIFY_OUTLOOK_CLIENT_SECRET`: Your client secret.
-   - URL: Codes will be sent by sending a POST request to a given URL, with the following JSON body: `{"email": "email_to_send_to@example.com", "code": "123456"}`. To set up:
+   - URL: Codes will be sent by sending a POST request to a given URL, with the following JSON body: `{"email": "email_to_send_to@example.com", "code": "123456"}`. The server should return a JSON body `{"success": true}` for success, or `{"success": false}` for error. To set up:
      1. First, setup a server that will answer these POST requests and actually send the emails. Make sure the URL is long and hard to guess!
      2. Set the following enviroment variable on Cloudflare:
         - `VERIFY_CODE_URL`: The URL to send code requests to.

@@ -14,6 +14,8 @@ import { getPost, getRecentPosts } from './repositories/post';
 
 declare global {
 	interface Env {
+		VERIFY_SENT_MESSAGE?: string;
+
 		VERIFY_CODE_URL?: string;
 
 		VERIFY_OUTLOOK_CLIENT_ID?: string;
@@ -142,10 +144,11 @@ app.get('/verify', async (c) => {
 		c.status(400);
 		throw new Error('Invalid verification link.');
 	}
+	const message = c.env.VERIFY_SENT_MESSAGE || 'A verification code has been sent to your email address.';
 	return c.render(
 		<>
 			<h1>Verify Your Email</h1>
-			<p>A verification code has been sent to your Teams account. Please enter it below.</p>
+			<p>{message} Please enter it below.</p>
 			<form action="/api/verify" method="post">
 				<p>
 					<input name="id" type="hidden" value={userId} />
